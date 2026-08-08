@@ -7,19 +7,76 @@
 <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}iframe{display:block;border:0;width:100%;height:100dvh}</style>
 </head>
 <body>
-<iframe id="site" src="./ru/?v=10" title="Wild Kamchatka"></iframe>
+<iframe id="site" src="./ru/?v=11" title="Wild Kamchatka"></iframe>
 <script>
 const frame=document.getElementById('site');
-frame.addEventListener('load',()=>{
+
+function enhancePage(){
   try{
     const doc=frame.contentDocument;
-    if(!doc||doc.getElementById('wk-review-fixes'))return;
-    const style=doc.createElement('style');
-    style.id='wk-review-fixes';
-    style.textContent='.wk-announcement,.wk-announce,article.wk-card[aria-label*="Икра кеты"],article.wk-card[aria-label*="Chum salmon caviar"]{display:none!important}';
-    doc.head.appendChild(style);
+    const win=frame.contentWindow;
+    if(!doc||!win)return;
+
+    if(!doc.getElementById('wk-review-fixes')){
+      const style=doc.createElement('style');
+      style.id='wk-review-fixes';
+      style.textContent='.preview-sections,.wk-announcement,.wk-announce,article.wk-card[aria-label*="Икра кеты"],article.wk-card[aria-label*="Chum salmon caviar"]{display:none!important}';
+      doc.head.appendChild(style);
+    }
+
+    const menuButton=doc.querySelector('header button[aria-label="Меню"],header button[aria-label="Menu"]');
+    const drawer=doc.querySelector('nav[aria-label="Меню"],nav[aria-label="Menu"]');
+    if(!menuButton||!drawer)return;
+
+    const closeButton=drawer.querySelector('button[aria-label="Закрыть"],button[aria-label="Close"]');
+    const backdrop=drawer.previousElementSibling;
+
+    const openMenu=()=>{
+      drawer.removeAttribute('inert');
+      drawer.setAttribute('aria-hidden','false');
+      drawer.style.transform='translateX(0)';
+      if(backdrop){
+        backdrop.setAttribute('aria-hidden','false');
+        backdrop.style.opacity='1';
+        backdrop.style.pointerEvents='auto';
+      }
+      doc.body.style.overflow='hidden';
+      closeButton?.focus();
+    };
+
+    const closeMenu=()=>{
+      drawer.setAttribute('aria-hidden','true');
+      drawer.setAttribute('inert','');
+      drawer.style.transform='translateX(-105%)';
+      if(backdrop){
+        backdrop.setAttribute('aria-hidden','true');
+        backdrop.style.opacity='0';
+        backdrop.style.pointerEvents='none';
+      }
+      doc.body.style.overflow='';
+    };
+
+    menuButton.addEventListener('click',openMenu);
+    closeButton?.addEventListener('click',closeMenu);
+    backdrop?.addEventListener('click',closeMenu);
+    drawer.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeMenu));
+    doc.addEventListener('keydown',event=>{
+      if(event.key==='Escape')closeMenu();
+    });
+
+    drawer.querySelectorAll('[role="group"][aria-label="Language"] button').forEach(button=>{
+      button.addEventListener('click',()=>{
+        const locale=button.textContent.trim().toLowerCase();
+        if(locale!=='ru'&&locale!=='en')return;
+        const url=new URL(win.location.href);
+        url.pathname=url.pathname.replace(/\/(ru|en)(?=\/|$)/,'/'+locale);
+        win.location.href=url.href;
+      });
+    });
   }catch(e){}
-});
+}
+
+frame.addEventListener('load',enhancePage);
 </script>
 </body>
 </html>
