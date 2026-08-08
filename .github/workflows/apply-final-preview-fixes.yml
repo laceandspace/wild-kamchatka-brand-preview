@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/apply-final-preview-fixes.yml'
+      - 'final-fix-marker.txt'
 
 permissions:
   contents: write
