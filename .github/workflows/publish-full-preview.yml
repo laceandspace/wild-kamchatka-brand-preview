@@ -19,8 +19,16 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/wk-site
-          cat .deploy/wk.part.* > /tmp/wk-site.tar.gz
+          cat .deploy/wk.part.[a-z][a-z] > /tmp/wk-site.tar.gz
           tar -xzf /tmp/wk-site.tar.gz -C /tmp/wk-site
+          python3 - <<'PY'
+          from pathlib import Path
+          css = '<style id="wk-final-preview-fixes">.wk-announcement,.wk-announce,article.wk-card[aria-label*="Икра кеты"],article.wk-card[aria-label*="Chum salmon caviar"]{display:none!important}</style>'
+          for path in Path('/tmp/wk-site').rglob('*.html'):
+              text = path.read_text(encoding='utf-8')
+              if 'wk-final-preview-fixes' not in text:
+                  path.write_text(text.replace('</head>', css + '</head>'), encoding='utf-8')
+          PY
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github ! -name .deploy -exec rm -rf {} +
           cp -a /tmp/wk-site/. .
           touch .nojekyll
